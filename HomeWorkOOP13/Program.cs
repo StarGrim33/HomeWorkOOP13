@@ -10,11 +10,16 @@
         }
     }
 
+    interface IDetail
+    {
+        string Title { get; }
+    }
+
     class CarService
     {
         private int _money = 0;
 
-        private Queue<Car> _cars = new();
+        private readonly Queue<Car> _cars = new();
         private List<Storage> _details = new();
 
         public CarService(string name, string adress)
@@ -115,7 +120,6 @@
                         
                         isClientOn = false;
                         break;
-
                 }
             }
         }
@@ -133,7 +137,7 @@
 
             foreach(Storage storage in _details)
             {
-                Console.WriteLine($"{index++}.{storage.Detail.Name}, количество: {storage.Quantity}");
+                Console.WriteLine($"{index++}.{storage.Detail.Title}, количество: {storage.Quantity}");
             }
 
             Console.ReadKey();
@@ -147,6 +151,8 @@
 
     class Storage
     {
+        private Dictionary<string,StorageDetail> _detail = new Dictionary<string,StorageDetail>();
+
         public Storage(Detail detail, int quantity)
         {
             Detail = detail;
@@ -155,29 +161,53 @@
 
         public Detail Detail { get; }
         public int Quantity { get; private set; }
+
+        public void AddDetail(IDetail detail, int quantity)
+        {
+            if (_detail.ContainsKey(detail.Title))
+            {
+                _detail[detail.Title].Add(count);
+            }
+            else
+            {
+                _detail.Add(new StorageDetail(detail, quantity));
+            }
+        }
+    }
+
+    class StorageDetail : IDetail
+    {
+        private readonly IDetail _detail;
+        private int _quantity;
+
+        public StorageDetail(IDetail detail, int quantity)
+        {
+            _detail = detail;
+            _quantity = quantity;
+        }
+
+        public string Title => _detail.Title;
     }
 
     class Car
     {
-        public Car(string name, string problem)
+        public Car(string name, Detail brokenDetail)
         {
             Name = name;
-            Problem = problem;
+            BrokenDetail = brokenDetail;
         }
 
         public string Name { get; private set; }
-        public string Problem { get; private set; }
+        public Detail BrokenDetail { get;}
     }
 
-    class Detail
+    class Detail : IDetail
     {
-        public Detail(string name, int cost)
+        public Detail(string title)
         {
-            Name = name;
-            Cost = cost;
+            Title = title;
         }
 
-        public string Name { get; private set; }
-        public int Cost { get; private set; }
+        public string Title { get; private set; }
     }
 }
