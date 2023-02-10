@@ -15,23 +15,22 @@ namespace HomeWorkOOP13
 
     class CarService
     {
+        private static Random _random = new();
         private int _money = 0;
         private Queue<Car> _cars = new();
         private List<Storage> _details = new();
-        private CarBuilder _carBuilder = new();
-        private Price _price = new();
-        private static Random _random = new();
 
         public CarService(string name, string adress)
         {
+            CarBuilder _carBuilder = new();
             Name = name;
             Adress = adress;
 
             _details = new List<Storage>()
             {
-                new Storage(new Detail("Двигатель"), 3),
-                new Storage(new Detail("Цепь ГРМ"), 3),
-                new Storage(new Detail("Сцепление"), 2),
+                new Storage(new Detail("Двигатель", 10000), 3),
+                new Storage(new Detail("Цепь ГРМ", 8000), 3),
+                new Storage(new Detail("Сцепление", 4000), 2),
             };
 
             _cars = _carBuilder.Build(10);
@@ -129,7 +128,7 @@ namespace HomeWorkOOP13
                     {
                         detail.RemoveQuantity();
 
-                        if (DoMistake())
+                        if (IsWorkerDidMistake())
                         {
                             Console.WriteLine("Слесарь по ошибке заменил не ту деталь, нужно заплатить штраф");
                             Console.ReadKey();
@@ -145,7 +144,7 @@ namespace HomeWorkOOP13
                     else
                     {
                         Console.WriteLine("Нет такой детали, нужно заплатить штраф");
-                        Penalty();
+                        Penalise();
                         _cars.Dequeue();
                     }
                 }
@@ -171,7 +170,7 @@ namespace HomeWorkOOP13
             if(_cars.Count > 0)
             {
                 var client = _cars.Peek();
-                return _price.ReturnCost(client.BrokenDetail);
+                return client.BrokenDetail.Cost;
             }
             else
             {
@@ -180,17 +179,17 @@ namespace HomeWorkOOP13
             }
         }
 
-        private void Penalty()
+        private void Penalise()
         {
             _money -= CalculateCost();
             Console.ReadKey();
         }
 
-        private bool DoMistake()
+        private bool IsWorkerDidMistake()
         {
-            if(Chance())
+            if(IsChance())
             {
-                Penalty();
+                Penalise();
                 Console.WriteLine($"Штраф: {CalculateCost()}");
                 return true;
             }
@@ -200,7 +199,7 @@ namespace HomeWorkOOP13
             }
         }
 
-        private bool Chance()
+        private bool IsChance()
         {
             int minNumber = 1;
             int maxNumber = 100;
@@ -247,9 +246,9 @@ namespace HomeWorkOOP13
         {
             _brokenDetails = new List<Detail>()
             {
-                new Detail("Двигатель"),
-                new Detail("Цепь ГРМ"),
-                new Detail("Сцепление"),
+                new Detail("Двигатель", 10000),
+                new Detail("Цепь ГРМ", 8000),
+                new Detail("Сцепление", 4000),
             };
         }
 
@@ -269,39 +268,19 @@ namespace HomeWorkOOP13
         {
             int randomIndex = _random.Next(_brokenDetails.Count);
             Detail detail = _brokenDetails[randomIndex];
-            return new Detail(detail.Title);
+            return new Detail(detail.Title, detail.Cost);
         }
     }
 
     class Detail
     {
-        public Detail(string title)
+        public Detail(string title, int cost)
         {
             Title = title;
+            Cost = cost;
         }
 
         public string Title { get; private set; }
-    }
-
-    class Price
-    {
-        Dictionary<string, int> _price = new();
-
-        public Price()
-        {
-            _price.Add("Двигатель", 10000);
-            _price.Add("Сцепление", 8000);
-            _price.Add("Цепь ГРМ", 4000);
-        }
-
-        public int ReturnCost(Detail detail)
-        {
-            if (_price.TryGetValue(detail.Title, out int price))
-            {
-                return price;
-            }
-
-            return 0;
-        }
+        public int Cost { get; private set; }
     }
 }
