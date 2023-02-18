@@ -1,7 +1,4 @@
-﻿using System;
-using System.Linq;
-
-namespace HomeWorkOOP13
+﻿namespace HomeWorkOOP13
 {
     internal class Program
     {
@@ -9,7 +6,7 @@ namespace HomeWorkOOP13
         {
             CarService carService = new("Автоцентр-Владимир на Рокадной", "г.Владимир, ул.Электрозаводская, д.2А");
             Console.WriteLine($"Приветствуем Вас в нашем салоне {carService.Name}");
-            carService.StartDay();
+            carService.Menu();
         }
     }
 
@@ -34,19 +31,19 @@ namespace HomeWorkOOP13
             };
 
             _cars = _carBuilder.Build(10);
-        } 
+        }
 
         public string Name { get; private set; }
         public string Adress { get; private set; }
 
-        public void StartDay()
+        public void Menu()
         {
             const string CommandServeClient = "1";
             const string CommandExit = "2";
 
             bool isProgramOn = true;
 
-            while (_cars.Count > 0 && isProgramOn)
+            while (isProgramOn && _cars.Count > 0)
             {
                 Console.Clear();
                 Console.WriteLine($"Добрый день.\nВ салоне очередь из {_cars.Count} машин");
@@ -70,8 +67,49 @@ namespace HomeWorkOOP13
                         break;
                 }
             }
+        }
 
-            if(_cars.Count == 0)
+        private void ServeClient()
+        {
+            bool isClientOn = true;
+
+            if (_cars.Count >= 0)
+            {
+                var car = _cars.Dequeue();
+
+                while (isClientOn)
+                {
+                    const string CommandFixCar = "1";
+                    const string CommandShowStorage = "2";
+                    const string CommandEnd = "3";
+
+                    Console.Clear();
+                    Console.WriteLine($"Проблема клиента: {car.BrokenDetail.Title}");
+                    Console.WriteLine($"Цена починки: {CalculateCost(car)}");
+                    Console.WriteLine($"Касса: {_money}");
+                    Console.WriteLine($"Выберите команду:\n{CommandFixCar}-Починить машину\n{CommandShowStorage}-Посмотреть склад\n{CommandEnd}-Выйти");
+
+                    string userInput = Console.ReadLine()!;
+
+                    switch (userInput)
+                    {
+                        case CommandFixCar:
+                            FixCar(car);
+                            isClientOn = false;
+                            break;
+
+                        case CommandShowStorage:
+                            ShowStorage();
+                            break;
+
+                        case CommandEnd:
+                            isClientOn = false;
+                            break;
+                    }
+                }
+            }
+
+            if (_cars.Count == 0)
             {
                 Console.WriteLine("Очередь закончилась");
                 Console.WriteLine($"За день Вы заработали: {_money}");
@@ -79,73 +117,31 @@ namespace HomeWorkOOP13
             }
         }
 
-        private void ServeClient()
+        private void FixCar(Car car)
         {
-            var client = _cars.Peek();
-            bool isClientOn = true;
-
-            while (isClientOn && _cars.Count > 0)
-            {
-                const string CommandFixCar = "1";
-                const string CommandShowStorage = "2";
-                const string CommandEnd = "3";
-
-                Console.Clear();
-                Console.WriteLine($"Проблема клиента: {client.BrokenDetail.Title}");
-                Console.WriteLine($"Цена починки: {CalculateCost()}");
-                Console.WriteLine($"Касса: {_money}");
-                Console.WriteLine($"Выберите команду:\n{CommandFixCar}-Починить машину\n{CommandShowStorage}-Посмотреть склад\n{CommandEnd}-Выйти");
-
-                string userInput = Console.ReadLine()!;
-
-                switch (userInput)
-                {
-                    case CommandFixCar:
-                        FixCar();
-                        isClientOn = false;
-                        break;
-
-                    case CommandShowStorage:
-                        ShowStorage();
-                        break;
-
-                    case CommandEnd:
-                        isClientOn = false;
-                        break;
-                }
-            }
-        }
-
-        private void FixCar()
-        {
-            var client = _cars.Peek();
-
             foreach (Storage detail in _details)
             {
-                if(detail.Detail.Title == client.BrokenDetail.Title)
+                if (detail.Detail.Title == car.BrokenDetail.Title)
                 {
-                    if(detail.Quantity > 0)
+                    if (detail.Quantity > 0)
                     {
                         detail.RemoveQuantity();
 
-                        if (IsWorkerDidMistake())
+                        if (IsWorkerDidMistake(car))
                         {
                             Console.WriteLine("Слесарь по ошибке заменил не ту деталь, нужно заплатить штраф");
                             Console.ReadKey();
-                            _cars.Dequeue();
                         }
                         else
                         {
                             Console.WriteLine("Успешная починка");
-                            _money += CalculateCost();
-                            _cars.Dequeue();
+                            _money += CalculateCost(car);
                         }
                     }
                     else
                     {
                         Console.WriteLine("Нет такой детали, нужно заплатить штраф");
-                        Penalise();
-                        _cars.Dequeue();
+                        Penalise(car);
                     }
                 }
             }
@@ -165,12 +161,11 @@ namespace HomeWorkOOP13
             Console.ReadKey();
         }
 
-        private int CalculateCost()
+        private int CalculateCost(Car car)
         {
-            if(_cars.Count > 0)
+            if (_cars.Count >= 0)
             {
-                var client = _cars.Peek();
-                return client.BrokenDetail.Cost;
+                return car.BrokenDetail.Cost;
             }
             else
             {
@@ -179,18 +174,18 @@ namespace HomeWorkOOP13
             }
         }
 
-        private void Penalise()
+        private void Penalise(Car car)
         {
-            _money -= CalculateCost();
+            _money -= CalculateCost(car);
             Console.ReadKey();
         }
 
-        private bool IsWorkerDidMistake()
+        private bool IsWorkerDidMistake(Car car)
         {
-            if(IsChance())
+            if (IsChance())
             {
-                Penalise();
-                Console.WriteLine($"Штраф: {CalculateCost()}");
+                Penalise(car);
+                Console.WriteLine($"Штраф: {CalculateCost(car)}");
                 return true;
             }
             else
